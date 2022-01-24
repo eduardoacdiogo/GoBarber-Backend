@@ -8,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-import User from './User';
+import User from '@modules/users/infra/typeorm/entities/User';
 
 @Entity('appointments')
 class Appointment {
@@ -30,13 +30,6 @@ class Appointment {
 
   @UpdateDateColumn()
   update_at: Date;
-
-  // Desnecessario pois o typeorm irá construir ele
-  // constructor({ provider, date }: Omit<Appointment, 'id'>) {
-  //   this.id = uuid();
-  //   this.provider = provider;
-  //   this.date = date;
-  // }
 }
 
 export default Appointment;
