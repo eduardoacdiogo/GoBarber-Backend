@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>62/62</span>
+                <span class='fraction'>67/67</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.5% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/8</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>62/62</span>
+                <span class='fraction'>67/67</span>
             </div>
         
             
@@ -125,7 +125,12 @@
 <a name='L60'></a><a href='#L60'>60</a>
 <a name='L61'></a><a href='#L61'>61</a>
 <a name='L62'></a><a href='#L62'>62</a>
-<a name='L63'></a><a href='#L63'>63</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -167,19 +172,24 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
+<span class="cline-any cline-yes">30x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">341x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
-<span class="cline-any cline-yes">31x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -190,7 +200,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { injectable, inject } from 'tsyringe';
 import { getDaysInMonth, getDate, isAfter } from 'date-fns';
 &nbsp;
-import IAppointmentsRepository from '../repositories/IAppointmentsRepository';
+import IAppointmentsRepository from '@modules/appointments/repositories/IAppointmentsRepository';
 &nbsp;
 interface IRequest {
   provider_id: string;
@@ -212,37 +222,42 @@ class ListProviderMonthAvailabilityService {
 &nbsp;
   public async execute({
     provider_id,
-    year,
     month,
+    year,
   }: IRequest): Promise&lt;IResponse&gt; {
     const appointments = await this.appointmentsRepository.findAllInMonthFromProvider(
       {
         provider_id,
-        year,
         month,
+        year,
       },
     );
 &nbsp;
     const numberOfDaysInMonth = getDaysInMonth(new Date(year, month - 1));
+    const currentDate = new Date(Date.now());
 &nbsp;
-    const eachDayArray = Array.from(
+    const availability = Array.from(
       { length: numberOfDaysInMonth },
-      (_, index) =&gt; index + 1,
+      (_, index) =&gt; {
+        const day = index + 1;
+&nbsp;
+        const { length: numberOfAppointmentsInDay } = appointments.filter(
+          ({ date }) =&gt; getDate(date) === day,
+        );
+&nbsp;
+        // ao contrário do que o Diego passou 23:59:59 na aulta
+        // coloquei 16:59:59 pq o último atendimento é às 17h
+        // então após este horário o dia sendo consultado não deve estar disponível
+        const appointmentDate = new Date(year, month - 1, day, 16, 59, 59);
+&nbsp;
+        return {
+          day,
+          available:
+            numberOfAppointmentsInDay &lt; 10 &amp;&amp;
+            isAfter(appointmentDate, currentDate),
+        };
+      },
     );
-&nbsp;
-    const availability = eachDayArray.map(day =&gt; {
-      const compareDate = new Date(year, month - 1, day, 23, 59, 59);
-&nbsp;
-      const appointmentsInDay = appointments.filter(appointment =&gt; {
-        return getDate(appointment.date) === day;
-      });
-&nbsp;
-      return {
-        day,
-        available:
-          isAfter(compareDate, new Date())<span class="branch-0 cbranch-no" title="branch not covered" > &amp;&amp; appointmentsInDay.length &lt; 10,</span>
-      };
-    });
 &nbsp;
     return availability;
   }
@@ -256,7 +271,7 @@ export default ListProviderMonthAvailabilityService;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at Sat Mar 26 2022 11:53:42 GMT-0300 (Horário Padrão de Brasília)
+                at Tue Mar 29 2022 08:49:12 GMT-0300 (Horário Padrão de Brasília)
             </div>
         <script src="../../prettify.js"></script>
         <script>
